@@ -9,12 +9,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
 import { ArrowRight, Loader2, Save, Plus, Trash2 } from 'lucide-react'
 import { CampScheduler } from '../lib/scheduler'
 import { ScheduleViews } from './ScheduleViews'
+import type { Schedule } from '../types'
 
 export const CampSchedulerApp = () => {
-  const [step, setStep] = useState(1)
+  const [step, _setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [schedule, setSchedule] = useState<any>(null)
+  const [schedule, setSchedule] = useState<Schedule | null>(null)
+  const [activeTab, setActiveTab] = useState('input')
 
   // Form states
   const [formData, setFormData] = useState({
@@ -110,9 +112,6 @@ export const CampSchedulerApp = () => {
 
     setLoading(true)
     try {
-      // Wrap in setTimeout to allow UI to update
-      await new Promise(resolve => setTimeout(resolve, 100))
-
       const scheduler = new CampScheduler(
         formData.activities,
         parseInt(formData.rounds),
@@ -122,11 +121,20 @@ export const CampSchedulerApp = () => {
       const generatedSchedule = scheduler.generateSchedule()
       
       if (generatedSchedule) {
-        setSchedule(generatedSchedule)
-        setStep(2)
-        const tabsElement = document.querySelector('[value="schedule"]') as HTMLElement
-        if (tabsElement) {
-          tabsElement.click()
+        setSchedule(generatedSchedule.schedule)
+        setActiveTab('schedule')
+
+        // Display repeated pairings information
+        if (generatedSchedule.repeatedPairings.length > 0) {
+          const repeatInfo = generatedSchedule.repeatedPairings.map(pairing => {
+            const encounters = pairing.encounters.map(e => 
+              `Round ${e.round} (${e.activity})`
+            ).join(', ')
+            return `${pairing.cabin1} vs ${pairing.cabin2} compete ${pairing.count} times: ${encounters}`
+          }).join('\n')
+          
+          console.log('Repeated Pairings Analysis:\n' + repeatInfo)
+          setError(`Note: Schedule generated with ${generatedSchedule.repeatedPairings.length} repeated cabin pairings. Check console for details.`)
         }
       } else {
         setError('Could not generate a valid schedule with these parameters. Try reducing the number of rounds or increasing the number of activities.')
@@ -139,23 +147,23 @@ export const CampSchedulerApp = () => {
     }
   }
 
-  const handleSaveSchedule = (viewType: string = 'rounds') => {
+  const handleSaveSchedule = (viewType: 'rounds' | 'activities' | 'cabins') => {
     if (!schedule) return
 
     let scheduleText = "Camp Activity Schedule\n\n"
     
     if (viewType === 'rounds') {
-      schedule.forEach((round: any) => {
+      schedule.forEach((round) => {
         scheduleText += `Round ${round.round}\n`
-        round.pairings.forEach((pair: any) => {
+        round.pairings.forEach((pair) => {
           scheduleText += `${pair.activity}: ${pair.cabin1} vs ${pair.cabin2}\n`
         })
         scheduleText += "\n"
       })
     } 
     else if (viewType === 'activities') {
-      const byActivities = schedule.reduce((acc: any, round: any) => {
-        round.pairings.forEach((pair: any) => {
+      const byActivities = schedule.reduce((acc: any, round) => {
+        round.pairings.forEach((pair) => {
           if (!acc[pair.activity]) {
             acc[pair.activity] = []
           }
@@ -177,8 +185,8 @@ export const CampSchedulerApp = () => {
       })
     }
     else if (viewType === 'cabins') {
-      const byCabins = schedule.reduce((acc: any, round: any) => {
-        round.pairings.forEach((pair: any) => {
+      const byCabins = schedule.reduce((acc: any, round) => {
+        round.pairings.forEach((pair) => {
           [pair.cabin1, pair.cabin2].forEach(cabin => {
             if (!acc[cabin]) {
               acc[cabin] = []
@@ -225,20 +233,10 @@ export const CampSchedulerApp = () => {
           </Alert>
         )}
 
-        <Tabs defaultValue={step === 1 ? "input" : "schedule"} className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger 
-              value="input" 
-              disabled={loading}
-              onClick={() => setStep(1)}
-            >
-              Input Data
-            </TabsTrigger>
-            <TabsTrigger 
-              value="schedule" 
-              disabled={loading || !schedule}
-              onClick={() => schedule && setStep(2)}
-            >
+            <TabsTrigger value="input">Input Data</TabsTrigger>
+            <TabsTrigger value="schedule" disabled={!schedule}>
               View Schedule
             </TabsTrigger>
           </TabsList>
@@ -323,7 +321,7 @@ export const CampSchedulerApp = () => {
             </div>
 
             <Button 
-              className="w-full"
+              className="w-full hover:bg-gray-100 transition-all bg-white border border-gray-200"
               onClick={validateAndGenerateSchedule}
               disabled={loading}
             >
@@ -341,7 +339,7 @@ export const CampSchedulerApp = () => {
             </Button>
           </TabsContent>
 
-          <TabsContent value="schedule">
+          <TabsContent value="schedule" data-value="schedule">
             {schedule && (
               <ScheduleViews 
                 schedule={schedule} 

@@ -1,18 +1,18 @@
 import React from 'react'
-import { Card } from './ui/card'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from './ui/tabs'
 import { Button } from './ui/button'
 import { Save } from 'lucide-react'
+import type { Schedule, ActivityGrouping, CabinGrouping } from '../types'
 
 interface ScheduleViewsProps {
-  schedule: any
-  onSave: (viewType: string) => void
+  schedule: Schedule
+  onSave: (viewType: 'rounds' | 'activities' | 'cabins') => void
 }
 
-export const ScheduleViews = ({ schedule, onSave }: ScheduleViewsProps) => {
+export const ScheduleViews: React.FC<ScheduleViewsProps> = ({ schedule, onSave }) => {
   // Transform schedule data for different views
-  const byActivities = schedule.reduce((acc: any, round: any) => {
-    round.pairings.forEach((pair: any) => {
+  const byActivities = schedule.reduce<ActivityGrouping>((acc, round) => {
+    round.pairings.forEach((pair) => {
       if (!acc[pair.activity]) {
         acc[pair.activity] = []
       }
@@ -25,8 +25,8 @@ export const ScheduleViews = ({ schedule, onSave }: ScheduleViewsProps) => {
     return acc
   }, {})
 
-  const byCabins = schedule.reduce((acc: any, round: any) => {
-    round.pairings.forEach((pair: any) => {
+  const byCabins = schedule.reduce<CabinGrouping>((acc, round) => {
+    round.pairings.forEach((pair) => {
       [pair.cabin1, pair.cabin2].forEach(cabin => {
         if (!acc[cabin]) {
           acc[cabin] = []
@@ -50,14 +50,14 @@ export const ScheduleViews = ({ schedule, onSave }: ScheduleViewsProps) => {
       </TabsList>
 
       <TabsContent value="rounds" className="space-y-6">
-        {schedule.map((round: any) => (
+        {schedule.map((round) => (
           <div 
             key={round.round}
             className="border rounded-lg p-4 space-y-3"
           >
             <h3 className="font-medium">Round {round.round}</h3>
             <div className="space-y-2">
-              {round.pairings.map((pair: any, index: number) => (
+              {round.pairings.map((pair, index) => (
                 <div 
                   key={index}
                   className="bg-gray-50 p-3 rounded-md flex justify-between items-center hover:bg-gray-100 transition-colors"
@@ -83,14 +83,14 @@ export const ScheduleViews = ({ schedule, onSave }: ScheduleViewsProps) => {
       </TabsContent>
 
       <TabsContent value="activities" className="space-y-6">
-        {Object.entries(byActivities).map(([activity, rounds]: [string, any]) => (
+        {Object.entries(byActivities).map(([activity, matches]) => (
           <div 
             key={activity}
             className="border rounded-lg p-4 space-y-3"
           >
             <h3 className="font-medium">{activity}</h3>
             <div className="space-y-2">
-              {rounds.map((match: any, index: number) => (
+              {matches.map((match, index) => (
                 <div 
                   key={index}
                   className="bg-gray-50 p-3 rounded-md flex justify-between items-center hover:bg-gray-100 transition-colors"
@@ -116,14 +116,14 @@ export const ScheduleViews = ({ schedule, onSave }: ScheduleViewsProps) => {
       </TabsContent>
 
       <TabsContent value="cabins" className="space-y-6">
-        {Object.entries(byCabins).map(([cabin, matches]: [string, any]) => (
+        {Object.entries(byCabins).map(([cabin, matches]) => (
           <div 
             key={cabin}
             className="border rounded-lg p-4 space-y-3"
           >
             <h3 className="font-medium">{cabin}</h3>
             <div className="space-y-2">
-              {matches.map((match: any, index: number) => (
+              {matches.map((match, index) => (
                 <div 
                   key={index}
                   className="bg-gray-50 p-3 rounded-md flex justify-between items-center hover:bg-gray-100 transition-colors"
