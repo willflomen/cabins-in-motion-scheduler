@@ -6,10 +6,14 @@ import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Alert, AlertDescription } from './ui/alert'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs'
-import { ArrowRight, Loader2, Save, Plus, Trash2 } from 'lucide-react'
+import { ArrowRight, Loader2, Plus, Trash2 } from 'lucide-react'
 import { CampScheduler } from '../lib/scheduler'
 import { ScheduleViews } from './ScheduleViews'
+<<<<<<< HEAD
+import type { Schedule, ActivityGrouping, CabinGrouping } from '../types'
+=======
 import type { Schedule } from '../types'
+>>>>>>> f4cf87afd6d7e8f5a35217412655d526e6984364
 
 export const CampSchedulerApp = () => {
   const [step, _setStep] = useState(1)
@@ -100,16 +104,6 @@ export const CampSchedulerApp = () => {
       return
     }
 
-    if (formData.activities.some(a => !a.trim())) {
-      setError('All activities must have names')
-      return
-    }
-
-    if (formData.cabins.some(c => !c.trim())) {
-      setError('All cabins must have names')
-      return
-    }
-
     setLoading(true)
     try {
       const scheduler = new CampScheduler(
@@ -124,7 +118,10 @@ export const CampSchedulerApp = () => {
         setSchedule(generatedSchedule.schedule)
         setActiveTab('schedule')
 
+<<<<<<< HEAD
+=======
         // Display repeated pairings information
+>>>>>>> f4cf87afd6d7e8f5a35217412655d526e6984364
         if (generatedSchedule.repeatedPairings.length > 0) {
           const repeatInfo = generatedSchedule.repeatedPairings.map(pairing => {
             const encounters = pairing.encounters.map(e => 
@@ -162,48 +159,59 @@ export const CampSchedulerApp = () => {
       })
     } 
     else if (viewType === 'activities') {
+<<<<<<< HEAD
+      const byActivities: ActivityGrouping = {}
+      schedule.forEach((round) => {
+        round.pairings.forEach((pair) => {
+          if (!byActivities[pair.activity]) {
+            byActivities[pair.activity] = []
+=======
       const byActivities = schedule.reduce((acc: any, round) => {
         round.pairings.forEach((pair) => {
           if (!acc[pair.activity]) {
             acc[pair.activity] = []
+>>>>>>> f4cf87afd6d7e8f5a35217412655d526e6984364
           }
-          acc[pair.activity].push({
+          byActivities[pair.activity].push({
             round: round.round,
             cabin1: pair.cabin1,
             cabin2: pair.cabin2
           })
         })
-        return acc
-      }, {})
+      })
 
-      Object.entries(byActivities).forEach(([activity, rounds]: [string, any]) => {
+      Object.entries(byActivities).forEach(([activity, matches]) => {
         scheduleText += `${activity}\n`
-        rounds.forEach((match: any) => {
+        matches.forEach((match) => {
           scheduleText += `Round ${match.round}: ${match.cabin1} vs ${match.cabin2}\n`
         })
         scheduleText += "\n"
       })
     }
     else if (viewType === 'cabins') {
+<<<<<<< HEAD
+      const byCabins: CabinGrouping = {}
+      schedule.forEach((round) => {
+=======
       const byCabins = schedule.reduce((acc: any, round) => {
+>>>>>>> f4cf87afd6d7e8f5a35217412655d526e6984364
         round.pairings.forEach((pair) => {
           [pair.cabin1, pair.cabin2].forEach(cabin => {
-            if (!acc[cabin]) {
-              acc[cabin] = []
+            if (!byCabins[cabin]) {
+              byCabins[cabin] = []
             }
-            acc[cabin].push({
+            byCabins[cabin].push({
               round: round.round,
               activity: pair.activity,
               opponent: cabin === pair.cabin1 ? pair.cabin2 : pair.cabin1
             })
           })
         })
-        return acc
-      }, {})
+      })
 
-      Object.entries(byCabins).forEach(([cabin, matches]: [string, any]) => {
+      Object.entries(byCabins).forEach(([cabin, matches]) => {
         scheduleText += `${cabin}\n`
-        matches.forEach((match: any) => {
+        matches.forEach((match) => {
           scheduleText += `Round ${match.round}: ${match.activity} vs ${match.opponent}\n`
         })
         scheduleText += "\n"
